@@ -1,0 +1,9 @@
+{
+    "Lua.diagnostics.globals": [
+        "minetest",
+        "VoxelArea"
+    ],
+    "python.pythonPath": "${workspaceFolder}/.venv/bin/python3",
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true
+}

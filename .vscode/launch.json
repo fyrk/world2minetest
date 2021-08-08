@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "osm2minetest.py",
+            "console": "integratedTerminal"
+        }
+    ]
+}
