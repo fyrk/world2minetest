@@ -5,6 +5,7 @@ world2minetest is a tool to generate [Minetest](https://www.minetest.net/) world
 Currently, the following geodata sources are supported:
  * Heightmaps in "XYZ ASCII" format in a [EPSG:25832](https://epsg.io/25832) coordinate system ([example](https://www.hannover.de/Leben-in-der-Region-Hannover/Verwaltungen-Kommunen/Die-Verwaltung-der-Landeshauptstadt-Hannover/Dezernate-und-Fachbereiche-der-LHH/Stadtentwicklung-und-Bauen/Fachbereich-Planen-und-Stadtentwicklung/Geoinformation/Open-GeoData/3D-Stadtmodell-und-Gel%C3%A4ndemodell/Digitales-Gel%C3%A4ndemodell-DGM1))
  * [OpenStreetMap](https://openstreetmap.org), using the [Overpass API](https://overpass-turbo.eu/)
+ * .dxf CAD files (trees only)
 
 Installation
 ============
