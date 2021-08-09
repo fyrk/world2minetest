@@ -1,126 +1,92 @@
-# Fetch data.json from OSM
+**This is still work in progress**
+
+world2minetest is a tool to generate [Minetest](https://www.minetest.net/) worlds based on publicly available real-world geodata. It was inspired by tools such as [geo-mapgen](https://github.com/Gael-de-Sailly/geo-mapgen).
+
+Currently, the following geodata sources are supported:
+ * Heightmaps in "XYZ ASCII" format in a [EPSG:25832](https://epsg.io/25832) coordinate system ([example](https://www.hannover.de/Leben-in-der-Region-Hannover/Verwaltungen-Kommunen/Die-Verwaltung-der-Landeshauptstadt-Hannover/Dezernate-und-Fachbereiche-der-LHH/Stadtentwicklung-und-Bauen/Fachbereich-Planen-und-Stadtentwicklung/Geoinformation/Open-GeoData/3D-Stadtmodell-und-Gel%C3%A4ndemodell/Digitales-Gel%C3%A4ndemodell-DGM1))
+ * [OpenStreetMap](https://openstreetmap.org), using the [Overpass API](https://overpass-turbo.eu/)
+
+Installation
+============
+
+ 1. Copy this repo's content to your computer, e.g. by cloning:
+    ```
+    git clone https://github.com/FlorianRaediker/world2minetest.git
+    ```
+ 2. Install the required Python modules:
+    ```
+    pip3 install -r requirements.txt
+    ```
+
+How to use
+==========
+Generating a Minetest world currently consists of the following 4 steps. Either step 1, step 2, or step3 is required.
+
+ 1. Generate a heightmap.
+ 2. Use OpenStreetMap data to add details.
+ 3. Add trees using .dxf data.
+ 4. Create a `map.dat` file that can be read by world2minetest Mod for Minetest.
+
+## Generating a heightmap
+A heightmap can be generated using the parse_heightmap_dgm.py script. See `python3 parse_heightmap_dgm.py -h` for details.
+First, download ASCII XYZ files and save them to the `data_sources/` directory.
+
+For Hanover (Germany), you can use this link: https://www.hannover.de/Leben-in-der-Region-Hannover/Verwaltungen-Kommunen/Die-Verwaltung-der-Landeshauptstadt-Hannover/Dezernate-und-Fachbereiche-der-LHH/Stadtentwicklung-und-Bauen/Fachbereich-Planen-und-Stadtentwicklung/Geoinformation/Open-GeoData/3D-Stadtmodell-und-Gel%C3%A4ndemodell/Digitales-Gel%C3%A4ndemodell-DGM1.
+
+Then, call parse_dgm.py with any files you want to convert into a heightmap:
 ```
-[out:json][timeout:25];
-{{geocodeArea:"Mühlenberg, Ricklingen, Hanover, Region Hannover, Lower Saxony, Germany"}}->.a;
+$ python3 parse_dgm.py data_sources/path/to/file1.xyz data_sources/path/to/file2.xyz ...
+```
+This will create a new file `parsed_data/heightmap.dat`
+
+## Use OpenStreetMap data
+Select data using the [Overpass API](https://overpass-turbo.eu/). 
+Here is an example query:
+```
+[out:json][timeout:25][bbox:{{bbox}}];
 (
-  way[highway](area.a);
-  way[leisure](area.a);
-  way[amenity](area.a);
-  way[landuse](area.a);
-  way[natural](area.a);
-  way[building](area.a);
-  node[natural](area.a);
-  node[amenity](area.a);
+   way;
+   node;
 );
 out body;
 >;
 out skel qt;
 ```
 
-**old:**
+Copy the JSON data from the "Data" tab into a file `data_sources/osm.json`.
+Then, parse this data with parse_osm.py (see `python3 parse_features_osm.py -h` for details).
 ```
-[out:json][timeout:25];
-{{geocodeArea:"Mühlenberg, Ricklingen, Hanover, Region Hannover, Lower Saxony, Germany"}}->.searchArea;
-(
-  way["highway"](area.searchArea);
-);
-out body;
->;
-out skel qt;
+$ python3 parse_osm.py data_sources/osm.json
 ```
+This will create a new file `parsed_data/features_osm.json`.
 
+## Add trees from .dxf files
+For geodata saved in .dxf files, parse_features_dxf.py can be used (see `python3 parse_features_dxf.py -h` for details).
+Currently, only trees are supported.
+You will want to specify a query for [ezdxf](https://ezdxf.readthedocs.io/en/stable/tutorials/getting_data.html#retrieve-entities-by-query-language) to get all entities representing trees.
+Example command:
 ```
-[out:json][timeout:25];
-area(3604236640)->.a;
-(
-  way["highway"](area.a);
-);
-out body;
->;
-out skel qt;
+$ python3 parse_features_dxf.py data_sources/path/to/file1.xyz data_sources/path/to/file2.xyz ... --tree-query="*[(layer=='Eingemessene Bäume' & name=='S220.40']"
 ```
 
-# Layers
+## Putting it all together – creating `map.dat`
+See `python3 generate_map.py` for details.
+Example usage:
+```
+$ python3 generate_map.py --heightmap=parsed_data/heightmap.dat --features=parsed_data/features_osm.json --features=parsed_data/features_dxf.json
+```
 
-Layer 0: surface (ways etc.)
- - Byte 1: depth into the ground (below floor height)
- - Byte 2: block type
-    * `0`: default surface
+Screenshots
+===========
+![](docs/screenshot_water.png)
+![](docs/screenshot_trees_with_postboxes_and_buildings.png)
+![](docs/screenshot_bench.png)
+![](docs/screenshot_fence.png)
+![](docs/screenshot_primary_road.png)
 
-    * **surface** (for highways and areas)
-    * `1`: paving stones `way[surface=paving_stones]`
-    * `2`: fine gravel `way[surface=fine_gravel]`
-    * `3`: concrete `way[surface=concrete]`
-    * `4`: asphalt `way[surface=asphalt]` or `way[highway=asphalt]`
-    * `9`: dirt
 
-    * **highway**
-    * `10`: default `way[highway]`
-    * `11`: footway `way[highway=footway]`
-    * `12`: service `way[highway=service]`
-    * `13`: cycleway `way[highway=cycleway]`
-    * `14`: pedestrian `way[highway=pedestrian]`
-    * `15`: residential `way[highway=residential]`
-    * `16`: path `way[highway=path]`
-
-    * **leisure**
-    * `20`: default `way[leisure]`
-    * `21`: park `way[leisure=park]`
-    * `22`: playground `way[leisure=playground]`
-    * `23`: sports centre `way[leisure=sports_centre]`
-    * `24`: pitch `way[leisure=pitch]`
-
-    * **amenity**
-    * `30`: default `way[amenity]`
-    * `31`: school `way[amenity=school]`
-    * `32`: parking `way[amenity=parking]`
-
-    * **landuse**
-    * `40`: default `way[landuse]`
-    * `41`: residential `way[landuse=residential]`
-    * `42`: village green `way[landuse=village_green]`
-
-    * **natural**
-    * `50`: default `way[natural]`
-    * `51`: water `way[natural=water]`
-
-    * **underground**
-    * `128 + x`: air (depth from Byte 1) with 1 block (type defined by `x`) below
-
-Layer 1: above the surface
- - Byte 3: height
- - Byte 4: building's level count
- - Byte 5:
-    * `0`: air (no wall)
-
-    * **building**
-    * `1`: default `way[building]`
-    * `2`: brick `way[building:material=brick]`
-
-    * **natural**
-    * `10`: default
-    * `11`: tree starts here `node[natural=tree]`
-    * `12`: grass (randomly added if ground is park or village_green)
-
-    * **amenity**
-    * `21`: post box `node[amenity=post_box]`
-    * `22`: recycling `node[amenity=recycling]`
-    * `23`: vending machine `node[amenity=vending_machine]`
-    * `24`: bench `node[amenity=bench]`
-    * `25`: telephone `node[amenity=telephone]`
-
-    * **barrier**
-    * `30`: default
-    * `31`: fence `way[barrier=fence]`
-    * `32`: wall `way[barrier=wall]`
-    * `33`: bollard `node[barrier=bollard]`
-    * `34`: gate `node[barrier=gate]`
-    * `35`: hedge `way[barrier=hedge]`
-
-    * **air between**
-    * 128 + x: air (height from Byte 3) with 1 stone above
-
-# License
+License
+=======
 world2minetest - Generate Minetest worlds based on geodata<br>
 Copyright (C) 2021  Florian Rädiker
 
