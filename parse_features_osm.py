@@ -115,6 +115,8 @@ for area in areas:
     elif "landuse" in tags:
         if tags["landuse"] == "residential":
             surface = "residential_landuse"  # "residential" is also a highway type
+        elif tags["landuse"] == "reservoir":
+            surface = "water"
         elif tags["landuse"] in SURFACES:
             surface = tags["landuse"]
         else:
