@@ -1,6 +1,6 @@
 minetest.set_mapgen_setting("mg_name", "singlenode", true)
 
-local FLOOR_HEIGHT = 0
+local FLOOR_HEIGHT = -50
 
 local air = minetest.get_content_id("air")
 local silver_sand = minetest.get_content_id("default:silver_sand")
