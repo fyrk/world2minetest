@@ -295,7 +295,11 @@ if args.incr:
     block_z_end = (-offset_z+a.shape[0])//16
     for block_x in range(block_x_start, block_x_end+1):
         for block_z in range(block_z_start, block_z_end+1):
-            if diff[block_z*16:(block_z+1)*16, block_x*16:(block_x+1)*16].any():
+            z1 = max(block_z*16+offset_z, 0)
+            z2 = min(z1+16, diff.shape[0])
+            x1 = max(block_x*16+offset_x, 0)
+            x2 = min(x1+16, diff.shape[1])
+            if diff[z1:z2, x1:x2].any():
                 changed_blocks.append((block_x, block_z))
     print(f"checking blocks from {block_x_start},{block_z_start} to {block_x_end},{block_z_end} for changes")
     print("changed blocks:", changed_blocks[:10], "..." if len(changed_blocks) > 10 else "")
