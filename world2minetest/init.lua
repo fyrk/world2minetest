@@ -71,8 +71,9 @@ local DECORATION_IDS = {
     --[2] = brick, -- brick
     -- natural
     [10] = bush_leaves, -- default
-    --[] tree
-    [12] = grass, -- grass
+    [11] = grass, -- grass
+    -- trees, bushes etc.
+    -- ... see DECORATION_SCHEMATICS
     -- amenity
     [21] = gold_block, -- post box
     [22] = copper_block, -- recycling
@@ -86,6 +87,13 @@ local DECORATION_IDS = {
     [33] = desert_cobble_wall, -- bollard
     [34] = gate, -- gate
     [35] = bush_leaves, -- hedge
+}
+
+local DECORATION_SCHEMATICS = {
+    [12] = {schematic=minetest.get_modpath("default") .. "/schematics/apple_tree.mts", rotation="random", force_placement=false, flags="place_center_x, place_center_z"}, -- tree
+    [13] = {schematic=minetest.get_modpath("default") .. "/schematics/apple_tree.mts", rotation="random", force_placement=false, flags="place_center_x, place_center_z"}, -- leaf_tree
+    [14] = {schematic=minetest.get_modpath("default") .. "/schematics/pine_tree.mts",  rotation="random", force_placement=false, flags="place_center_x, place_center_z"}, -- conifer
+    [15] = {schematic=minetest.get_modpath("default") .. "/schematics/bush.mts",       rotation="random", force_placement=false, flags="place_center_x, place_center_z", shift_y=-1}, -- bush
 }
 
 
@@ -147,7 +155,7 @@ minetest.register_on_generated(function(minp, maxp, blockseed)
     local vm, emin, emax = minetest.get_mapgen_object("voxelmanip")
     local data = vm:get_data()
     local va = VoxelArea:new{MinEdge = emin, MaxEdge = emax}
-    local trees_to_place = {}
+    local schematics_to_place = {}
     for x = minp.x, maxp.x do
         for z = minp.z, maxp.z do
             local i = va:index(x, minp.y, z)
@@ -181,9 +189,9 @@ minetest.register_on_generated(function(minp, maxp, blockseed)
                 end
             else
                 if minp.y <= decoration_y and decoration_y <= maxp.y then
-                    if decoration_id == 11 then
-                        -- place tree
-                        table.insert(trees_to_place, {x=x, y=decoration_y, z=z})
+                    if 12 <= decoration_id and decoration_id <= 15 then
+                        -- place tree, bush etc.
+                        table.insert(schematics_to_place, {pos={x=x, y=decoration_y, z=z}, id=decoration_id})
                     else
                         data[i] = DECORATION_IDS[decoration_id]
                     end
@@ -193,15 +201,19 @@ minetest.register_on_generated(function(minp, maxp, blockseed)
     end
 
     vm:set_data(data)
-    for _, pos in pairs(trees_to_place) do
+    for _, s in pairs(schematics_to_place) do
+        local info = DECORATION_SCHEMATICS[s.id]
+        if info.shift_y then
+            s.pos.y = s.pos.y + info.shift_y
+        end
         minetest.place_schematic_on_vmanip(
             vm, -- vmanip
-            pos, -- pos
-            minetest.get_modpath("default") .. "/schematics/apple_tree.mts", -- schematic
-            "random", -- rotation
-            nil, -- replacement
-            true, -- force_placement
-            "place_center_x, place_center_z" -- flags
+            s.pos, -- pos
+            info.schematic, -- schematic
+            info.rotation, -- rotation
+            info.replacement, -- replacement
+            info.force_placement, -- force_placement
+            info.flags -- flags
         )
     end
     vm:update_liquids()

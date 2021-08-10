@@ -21,7 +21,13 @@
             "type": "python",
             "request": "launch",
             "program": "parse_features_dxf.py",
-            "args": ["data_sources/skh1000/SKH1000_DXF/4699A.DXF", "data_sources/skh1000/SKH1000_DXF/4699B.DXF", "data_sources/skh1000/SKH1000_DXF/4799A.DXF", "data_sources/skh1000/SKH1000_DXF/4699C.DXF", "data_sources/skh1000/SKH1000_DXF/4699D.DXF", "data_sources/skh1000/SKH1000_DXF/4799C.DXF", "data_sources/skh1000/SKH1000_DXF/4698A.DXF", "data_sources/skh1000/SKH1000_DXF/4698B.DXF", "data_sources/skh1000/SKH1000_DXF/4798A.DXF", "--tree-query", "*[(layer==\"Eingemessene Bäume\" & name==\"S220.40\") | (layer==\"Nutzung_ Bewuchs_ Boden\" & (name==\"S220.38\" | name==\"S220.41\" | name==\"S220.43\" | name==\"S220.46\"))]"],
+            "args": [
+                "data_sources/skh1000/SKH1000_DXF/4699A.DXF", "data_sources/skh1000/SKH1000_DXF/4699B.DXF", "data_sources/skh1000/SKH1000_DXF/4799A.DXF", "data_sources/skh1000/SKH1000_DXF/4699C.DXF", "data_sources/skh1000/SKH1000_DXF/4699D.DXF", "data_sources/skh1000/SKH1000_DXF/4799C.DXF", "data_sources/skh1000/SKH1000_DXF/4698A.DXF", "data_sources/skh1000/SKH1000_DXF/4698B.DXF", "data_sources/skh1000/SKH1000_DXF/4798A.DXF", 
+                "--query", "*[layer==\"Eingemessene Bäume\" & name==\"S220.40\"]", "tree", 
+                "--query", "*[layer==\"Nutzung_ Bewuchs_ Boden\" & name==\"S220.41\"]", "leaf_tree",
+                "--query", "*[layer==\"Nutzung_ Bewuchs_ Boden\" & name==\"S220.43\"]", "conifer",
+                "--query", "*[layer==\"Nutzung_ Bewuchs_ Boden\" & name==\"S220.46\"]", "bush"
+            ],
             "console": "integratedTerminal"
         },
         {

@@ -1,4 +1,5 @@
 world2minetest/map.dat
+world2minetest/layer*.png
 .vscode/
 
 # Byte-compiled / optimized / DLL files

@@ -41,8 +41,11 @@ DECORATIONS = {
     "none": 0,  # air
 
     "natural": 10,  # default
-    "tree": 11,
-    "grass": 12,
+    "grass": 11,
+    "tree": 12,
+    "leaf_tree": 13,
+    "conifer": 14,
+    "bush": 15,
 
     # amenity
     "post_box": 21,

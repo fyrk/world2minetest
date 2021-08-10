@@ -5,7 +5,7 @@ world2minetest is a tool to generate [Minetest](https://www.minetest.net/) world
 Currently, the following geodata sources are supported. Heightmaps and .dxf CAD files must use the [EPSG:25832](https://epsg.io/25832) coordinate system.
  * Heightmaps in "XYZ ASCII" format
  * [OpenStreetMap](https://openstreetmap.org), using the [Overpass API](https://overpass-turbo.eu/)
- * .dxf CAD files (trees only)
+ * .dxf CAD files (trees & bushes only)
 
 
 
@@ -29,7 +29,7 @@ Generating a Minetest world consists of the following 4 steps. At least one of s
 
  1. Generate a heightmap.
  2. Use OpenStreetMap data to add details.
- 3. Add trees using .dxf data.
+ 3. Add decoration (trees, bushes) using .dxf data.
  4. Create a `map.dat` file that can be read by world2minetest Mod for Minetest.
 
 
@@ -68,19 +68,23 @@ $ python3 parse_features_osm.py data_sources/osm.json
 This will create a new file `parsed_data/features_osm.json`.
 
 
-## Add trees from .dxf files
+## Add decoration from .dxf files
 For geodata saved in .dxf files, `parse_features_dxf.py` can be used (see `python3 parse_features_dxf.py -h` for details).
 Currently, only trees are supported.
 
 First, download .dxf files and save them to the `data_sources/` directory.
 
-For Hanover (Germany), you can use this link: https://www.hannover.de/Leben-in-der-Region-Hannover/Verwaltungen-Kommunen/Die-Verwaltung-der-Landeshauptstadt-Hannover/Dezernate-und-Fachbereiche-der-LHH/Stadtentwicklung-und-Bauen/Fachbereich-Planen-und-Stadtentwicklung/Geoinformation/Open-GeoData/Digitale-Stadtkarten/Stadtkarte-1-1000-SKH1000.
+For Hanover (Germany), you can use [this link](https://www.hannover.de/Leben-in-der-Region-Hannover/Verwaltungen-Kommunen/Die-Verwaltung-der-Landeshauptstadt-Hannover/Dezernate-und-Fachbereiche-der-LHH/Stadtentwicklung-und-Bauen/Fachbereich-Planen-und-Stadtentwicklung/Geoinformation/Open-GeoData/Digitale-Stadtkarten/Stadtkarte-1-1000-SKH1000).
 
 Then, run `parse_features_dxf.py` with any files you want to convert into a heightmap.
-You will want to specify a query for [ezdxf](https://ezdxf.readthedocs.io/en/stable/tutorials/getting_data.html#retrieve-entities-by-query-language) to get all entities representing trees.
-Example command:
+For each decoration, you will want to specify a query for [ezdxf](https://ezdxf.readthedocs.io/en/stable/tutorials/getting_data.html#retrieve-entities-by-query-language) to get all entities representing that decoration. Currently, decorations `tree`, `leaf_tree`, `conifer`, and `bush` are available.
+Example command (for Hanover's data, see above):
 ```
-$ python3 parse_features_dxf.py data_sources/path/to/file1.dxf data_sources/path/to/file2.dxf ... --tree-query="*[(layer=='Eingemessene Bäume' & name=='S220.40']"
+$ python3 parse_features_dxf.py data_sources/path/to/file1.dxf data_sources/path/to/file2.dxf ... \
+  --query "*[layer=='Eingemessene Bäume' & name=='S220.40']" "tree" \
+  --query "*[layer=='Nutzung_ Bewuchs_ Boden' & name=='S220.41']" "leaf_tree" \
+  --query "*[layer=='Nutzung_ Bewuchs_ Boden' & name=='S220.43']" "conifer" \
+  --query "*[layer=='Nutzung_ Bewuchs_ Boden' & name=='S220.46']" "bush"
 ```
 This will create a new file `parsed_data/features_dxf.json`.
 
