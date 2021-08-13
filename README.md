@@ -113,7 +113,7 @@ Screenshots
 
 License
 =======
-world2minetest - Generate Minetest worlds based on geodata<br>
+world2minetest - Generate Minetest worlds based on real-world geodata<br>
 Copyright (C) 2021  Florian Rädiker
 
 This program is free software: you can redistribute it and/or modify<br>
