@@ -108,6 +108,7 @@ Screenshots
 ![](docs/screenshot_bench.png)
 ![](docs/screenshot_fence.png)
 ![](docs/screenshot_primary_road.png)
+![](docs/screenshot_hochhaus_fog.png)
 
 
 License
