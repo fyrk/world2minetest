@@ -133,8 +133,10 @@ local function get_layers(x, z)
 end
 
 local function load_map_file()
-    minetest.log("[w2mt] Loading map.dat...")
-    local file = io.open(modpath .. "/" .. "map.dat")
+    local path = modpath .. "/" .. "map.dat"
+    minetest.log("[w2mt] Loading map.dat from " .. path)
+    local file = io.open(path, "rb")
+
     offset_x = bytes2int(file:read(2))
     offset_z = bytes2int(file:read(2))
     width = bytes2int(file:read(2))
