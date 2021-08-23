@@ -10,7 +10,7 @@ from _util import le
 parser = argparse.ArgumentParser(description="Parse DGM1 'XYZ ASCII' files and generate a heightmap")
 parser.add_argument("files", metavar="file", type=argparse.FileType("r", encoding="utf-8"), nargs="+", help=".xyz files to process")
 parser.add_argument("--output", "-o", type=argparse.FileType("wb"), help="Output file. Defaults to parsed_data/heightmap.dat", default="./parsed_data/heightmap.dat")
-parser.add_argument("--medfiltsize", type=int, help="Odd kernel_size integer for scipy.ndimage.median_filter to smoothen the heights. 0 to disable. Default to 5.", default=5)
+parser.add_argument("--medfiltsize", type=int, help="Odd kernel_size integer for scipy.ndimage.median_filter to smoothen the heights. 0 to disable. Defaults to 5.", default=5)
 parser.add_argument("--createimg", action="store_true", help="Create a .png visualization of the heightmap")
 
 args = parser.parse_args()

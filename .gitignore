@@ -1,6 +1,7 @@
 world2minetest/map.dat
 world2minetest/layer*.png
 .vscode/
+_/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

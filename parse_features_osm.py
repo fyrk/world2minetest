@@ -1,6 +1,7 @@
 import argparse
 import json
 import random
+from collections import defaultdict
 
 import numpy as np
 from pyproj import CRS, Transformer
@@ -87,7 +88,7 @@ for e in data["elements"]:
 
 res_areas = []
 res_buildings = []
-res_decorations = []
+res_decorations = defaultdict(list)
 res_highways = []
 
 
@@ -171,7 +172,7 @@ for barrier in barriers:
         print_element("Default barrier:", barrier)
     x_coords, y_coords = node_ids_to_node_positions(barrier["nodes"])
     update_min_max(x_coords, y_coords)
-    res_decorations.append({"x": x_coords, "y": y_coords, "type": deco})
+    res_decorations[deco].append({"x": x_coords, "y": y_coords})
 
 
 print("Processing HIGHWAYS...")
@@ -231,7 +232,7 @@ for node in nodes:
         continue
     x, y = get_nodepos(node["lat"], node["lon"])
     update_min_max([x], [y])
-    res_decorations.append({"x": x, "y": y, "type": deco})
+    res_decorations[deco].append({"x": x, "y": y})
 
 print(f"\nfrom {min_x},{min_y} to {max_x},{max_y} (size: {max_x-min_x+1},{max_y-min_y+1})")
 

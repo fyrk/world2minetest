@@ -232,8 +232,8 @@ minetest.register_chatcommand("w2mt:incr", {
         local len = string.len(incr)/4
         for i = 0, len-1 do
             local start_i = i*4
-            local block_x = bytes2int(incr:sub(start_i+1, start_i+2))
-            local block_z = bytes2int(incr:sub(start_i+3, start_i+4))
+            local block_x = bytes2int(incr:sub(start_i+1, start_i+2), true)
+            local block_z = bytes2int(incr:sub(start_i+3, start_i+4), true)
             local node_x_min = block_x * 16
             local node_x_max = node_x_min + 15
             local node_z_min = block_z * 16

@@ -1,7 +1,7 @@
 {
     "configurations": [
         {
-            "name": "Python: parse_dgm.py",
+            "name": "Python: parse_heightmap_xyz.py",
             "type": "python",
             "request": "launch",
             "program": "parse_heightmap_xyz.py",
@@ -31,11 +31,31 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Python: parse_cityjson.py",
+            "type": "python",
+            "request": "launch",
+            "program": "parse_cityjson.py",
+            "args": [
+                "data_sources/citygml/CityGML_LoD2/5460_5799.json", 
+                "data_sources/citygml/CityGML_LoD2/5470_5799.json",
+                "data_sources/citygml/CityGML_LoD2/5460_5798.json",
+                "data_sources/citygml/CityGML_LoD2/5470_5798.json",
+            ],
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Python: generate_map.py",
             "type": "python",
             "request": "launch",
             "program": "generate_map.py",
-            "args": ["--heightmap=parsed_data/heightmap.dat", "--features=parsed_data/features_osm.json", "--features=parsed_data/features_dxf.json", "--createimg", "--incr", "--offsetx=546500", "--offsetz=5799000"],
+            "args": [
+                "--heightmap", "parsed_data/heightmap.dat", 
+                "--features",  "parsed_data/features_osm.json", 
+                "--features",  "parsed_data/features_dxf.json",
+                "--buildings", "parsed_data/buildings_cityjson.dat",
+                "--createimg", "--incr", 
+                "--offsetx=546500", "--offsetz=5799000"
+            ],
             "console": "integratedTerminal"
         }
     ]

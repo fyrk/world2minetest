@@ -1,6 +1,7 @@
 import argparse
 import json
 import os.path
+from collections import defaultdict
 
 import numpy as np
 import ezdxf
@@ -14,7 +15,7 @@ parser.add_argument("--query", "-q", action="append", nargs=2, metavar=("query",
 
 args = parser.parse_args()
 
-decorations = []
+decorations = defaultdict(list)
 
 for filepath in args.files:
     print(os.path.basename(filepath))
@@ -24,12 +25,12 @@ for filepath in args.files:
         entities = msp.query(query)
         print(f"  {deco}: {len(entities)} entities found")
         if entities:
-            decorations.extend({"x": int(round(e.dxf.insert[0])), "y": int(round(e.dxf.insert[1])), "type": deco} for e in entities)
+            decorations[deco].extend({"x": int(round(e.dxf.insert[0])), "y": int(round(e.dxf.insert[1]))} for e in entities)
 
-min_x = min(d["x"] for d in decorations)
-min_y = min(d["y"] for d in decorations)
-max_x = max(d["x"] for d in decorations)
-max_y = max(d["y"] for d in decorations)
+min_x = min(d["x"] for ds in decorations.values() for d in ds)
+min_y = min(d["y"] for ds in decorations.values() for d in ds)
+max_x = max(d["x"] for ds in decorations.values() for d in ds)
+max_y = max(d["y"] for ds in decorations.values() for d in ds)
 
 json.dump({
     "min_x": min_x,
