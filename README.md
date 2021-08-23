@@ -89,7 +89,7 @@ $ python3 parse_features_dxf.py data_sources/path/to/file1.dxf data_sources/path
 This will create a new file `parsed_data/features_dxf.json`.
 
 
-## Detailed buildings with CityGML
+## Detailed buildings with CityGML/CityJSON
 CityJSON containing buildings can be used instead of data from OpenStreetMap, for a higher level of detail.<br>
 If you have CityGML files, these need to be converted to CityJSON first. This can be done with [citygml-tools](https://github.com/citygml4j/citygml-tools):
 ```
