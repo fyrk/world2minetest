@@ -140,6 +140,16 @@ local function load_map_file()
     minetest.log("[w2mt] Loading map.dat from " .. path)
     local file = io.open(path, "rb")
 
+    local CURRENT_VERSION = 1
+
+    local version = bytes2int(file:read(1))
+    local min_compat_version = bytes2int(file:read(1))
+    if min_compat_version > CURRENT_VERSION then
+        error("world2minetest can't load map.dat (version " .. version .. ", needs version " .. min_compat_version .. " or higher (mod version: " .. CURRENT_VERSION .. ")")
+    end
+    if version ~= CURRENT_VERSION then
+        minetest.log("[w2mt] WARNING: map.dat has newer version " .. version .. " (mod version: " .. CURRENT_VERSION .. ")")
+    end
     layer_count = bytes2int(file:read(1))
     floor_height = -bytes2int(file:read(1))
     offset_x = bytes2int(file:read(2))
@@ -289,7 +299,47 @@ minetest.register_chatcommand("w2mt:incr", {
             local node_z_max = node_z_min + 15
             minetest.log("[w2mt] Deleting mapblock " .. i+1 .. "/" .. len .. ": (" .. block_x .. "," .. block_z .. ") from (" .. node_x_min .. "," .. node_z_min .. ") to (" .. node_x_max .. "," .. node_z_max .. ")")
             minetest.delete_area({x=node_x_min, y=floor_height, z=node_z_min}, {x=node_x_max, y=floor_height+255, z=node_z_max})
-            minetest.delete_area({x=node_x_min, y=FLOOR_HEIGHT, z=node_z_min}, {x=node_x_max, y=FLOOR_HEIGHT+255, z=node_z_max})
         end
+    end
+})
+
+
+minetest.register_chatcommand("w2mt:generateall", {
+    privs = {
+        server = true
+    },
+    func = function(name, param)
+        local min_x = -offset_x - 128
+        local max_x = min_x + width + 256
+        local min_z = -offset_z - 128
+        local max_z = min_z + height + 256
+
+        local vm = nil
+
+        local x = min_x
+        local count = 0
+        local start = tonumber(param)
+        if not start then
+            start = 1
+        end
+        local end_ = start + 499
+        minetest.log("[w2mt] Generating map from " .. start .. " to " .. end_)
+        while x+79 <= max_x do
+            local z = min_z
+            while z+79 <= max_z do
+                count = count + 1
+                if count >= start and count <= end_ then
+                    local minp = {x=x, y=floor_height-10, z=z}
+                    local maxp = {x=x+79, y=minp.y+280, z=z+79}
+                    minetest.log("[w2mt] Generating " .. count .. " " .. minetest.pos_to_string(minp) .. " to " .. minetest.pos_to_string(maxp))
+                    vm = minetest.get_voxel_manip(minp, maxp)
+                    local emin, emax = vm:read_from_map(minp, maxp)
+                    generate(vm, emin, emax, minp, maxp)
+                end
+                z = z + 80
+            end
+            x = x + 80
+        end
+        minetest.log("[w2mt] Generated map from " .. start .. " to " .. end_ .. " (total: " .. count .. ")")
     end
 })

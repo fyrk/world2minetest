@@ -375,7 +375,10 @@ else:
 
 
 with open("world2minetest/map.dat", "wb") as f:
+    f.write(le(np.uint8(1)))  # version
+    f.write(le(np.uint8(1)))  # minimum compatible version
     f.write(le(np.uint8(LAYER_COUNT)))
+    f.write(le(np.uint8(a[offset_z, offset_x])))  # height at spawnpoint
     f.write(le(np.uint16(offset_x)))
     f.write(le(np.uint16(offset_z)))
     f.write(le(np.uint16(a.shape[1])))
