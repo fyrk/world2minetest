@@ -7,3 +7,4 @@ scimage
 tqdm
 cjio
 raster_geometry
+skikit-image
