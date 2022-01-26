@@ -1,4 +1,4 @@
-world2minetest/map.dat
+world2minetest/map*.dat
 world2minetest/layer*.png
 .vscode/
 _/
