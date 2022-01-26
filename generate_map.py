@@ -60,6 +60,7 @@ parser.add_argument("--maxx", type=int, help="Maximum EPSG:25832 x coordinate", 
 parser.add_argument("--miny", type=int, help="Minimum EPSG:25832 y coordinate (y is z in Minetest)", default=None)
 parser.add_argument("--maxy", type=int, help="Maximum EPSG:25832 y coordinate (y is z in Minetest)", default=None)
 parser.add_argument("--noheightreduction", action="store_true", help="Do not subtract the smallest height from every heightmap value")
+parser.add_argument("--flat", action="store_true", help="If a --heightmap is specified, make the world flat, but subtract the heightmap value from each building coordinate")
 parser.add_argument("--createimg", action="store_true", help="Create a .png visualization of every layer")
 parser.add_argument("--verbose", "-v", action="store_true", help="More debug info")
 
@@ -70,22 +71,21 @@ max_x = args.maxx
 min_y = args.miny
 max_y = args.maxy
 
-heightmap_file = args.heightmap
-if heightmap_file is args.features is args.buildings is None:
-    raise argparse.ArgumentTypeError("at least one of --heightmap or --features or --buildings must be specified.")
+if (args.heightmap is None or args.flat) and args.features is args.buildings is None:
+    raise argparse.ArgumentTypeError("at least one of --heightmap (without --flat) or --features or --buildings is required.")
 
-if heightmap_file is not None:
-    heightmap_min_x = from_bytes(heightmap_file.read(4))
-    heightmap_min_y = from_bytes(heightmap_file.read(4))
-    heightmap_size_x = from_bytes(heightmap_file.read(2)) 
-    heightmap_size_y = from_bytes(heightmap_file.read(2))
+if args.heightmap is not None:
+    heightmap_min_x = from_bytes(args.heightmap.read(4))
+    heightmap_min_y = from_bytes(args.heightmap.read(4))
+    heightmap_size_x = from_bytes(args.heightmap.read(2))
+    heightmap_size_y = from_bytes(args.heightmap.read(2))
 
     min_x = min_x if min_x is not None else heightmap_min_x
     max_x = max_x if max_x is not None else (heightmap_min_x+heightmap_size_x-1)
     min_y = min_y if min_y is not None else heightmap_min_y
     max_y = max_y if max_y is not None else (heightmap_min_y+heightmap_size_y-1)
 
-    heightmap = np.frombuffer(zlib.decompress(heightmap_file.read()), dtype=np.uint8).reshape((heightmap_size_y, heightmap_size_x))
+    heightmap = np.frombuffer(zlib.decompress(args.heightmap.read()), dtype=np.uint8).reshape((heightmap_size_y, heightmap_size_x))
     size = (max_x-min_x+1, max_y-min_y+1)
     heightmap, h_offset_x, h_offset_y = fit_array(heightmap, heightmap_min_x, heightmap_min_y, min_x, min_y, size[0], size[1])
 else:
@@ -97,7 +97,7 @@ features = {
     "highways": [],
     "buildings": [],
     "decorations": {}
-}    
+}
 
 for file in args.features:
     data = json.load(file)
@@ -122,11 +122,19 @@ print(f"from {min_x},{min_y} to {max_x},{max_y} (size: {size[0]},{size[1]})")
 if min_x > max_x or min_y > max_y:
     raise ValueError("map size is invalid")
 
-a = np.zeros((size[1], size[0], 3), dtype=np.uint8)
+
+LAYER_COUNT = 4
+a = np.zeros((size[1], size[0], LAYER_COUNT), dtype=np.uint8)
+# bytes (one for every layer):
+# byte 0: y0: heightmap; floor goes up to this block.
+# byte 1: surface type (block to place at y=y0; below is always stone)
+# byte 2: y1: If y1<128, this is a decoration id (block to place at y=y0+1, and sometimes above (e.g. for trees)).
+#             Otherwise, y1-127 is the minimum y coordinate of a building. If the building is standing on the ground: y1=y0+127+1.
+# byte 3: y2: maximum y coordinate of a building. If y2>=128, the topmost block (at y=y2) is part of a roof and the maximum y coordinate is y2-127.
 
 
 # HEIGHTMAP
-if heightmap is not None:
+if heightmap is not None and not args.flat:
     if not args.noheightreduction:
         heightmap_sub = heightmap.min()
     else:
@@ -134,6 +142,9 @@ if heightmap is not None:
     a[h_offset_y:h_offset_y+heightmap.shape[0]+1, h_offset_x:h_offset_x+heightmap.shape[1]+1, 0] = heightmap - heightmap_sub
 else:
     heightmap_sub = 0
+    if args.flat:
+        FLAT_HEIGHT = 50
+        a[:, :, 0] = FLAT_HEIGHT  # everywhere the same height
 
 
 # FEATURES
@@ -146,7 +157,7 @@ def shift_coords(x_coords, y_coords):
                 x = x-min_x
                 y = y-min_y
                 x_res.append(x)
-                y_res.append(y)    
+                y_res.append(y)
         return x_res, y_res
     x, y = x_coords, y_coords
     if min_x <= x <= max_x and min_y <= y <= max_y:
@@ -322,19 +333,25 @@ print("offset x:", offset_x, "offset z:", offset_z)
 
 if args.incr:
     with open("world2minetest/map.dat", "rb") as f:
+        old_layer_count = from_bytes(f.read(1))
         old_offset_x = from_bytes(f.read(2))
         old_offset_z = from_bytes(f.read(2))
         old_size_x = from_bytes(f.read(2))
         old_size_y = from_bytes(f.read(2))
         length_a = from_bytes(f.read(4))
-        old_a_ = np.frombuffer(zlib.decompress(f.read(length_a)), dtype=np.uint8).reshape((old_size_y, old_size_x, 3))
+        old_a_ = np.frombuffer(zlib.decompress(f.read(length_a)), dtype=np.uint8).reshape((old_size_y, old_size_x, old_layer_count))
+
+    if old_layer_count != LAYER_COUNT:
+        old_a_wrong_shape = old_a_
+        old_a_ = np.zeros((old_size_y, old_size_x, LAYER_COUNT), dtype=np.uint8)
+        old_a_[:,:,:old_layer_count] = old_a_wrong_shape
 
     old_a_, old_offset_x, old_offset_z = fit_array(old_a_, -old_offset_x, -old_offset_z, -offset_x, -offset_z, a.shape[1], a.shape[0])
     old_a = np.zeros(a.shape, dtype=np.uint8)
     old_a[old_offset_z:old_offset_z+old_a_.shape[0], old_offset_x:old_offset_x+old_a_.shape[1]] = old_a_
 
     diff = a != old_a
-    
+
     changed_blocks = []
 
     block_x_start = -offset_x//16
@@ -356,10 +373,9 @@ if args.incr:
 else:
     changed_blocks = b""
 
-print("594, 164:", a[164+offset_z, 594+offset_x])
-
 
 with open("world2minetest/map.dat", "wb") as f:
+    f.write(le(np.uint8(LAYER_COUNT)))
     f.write(le(np.uint16(offset_x)))
     f.write(le(np.uint16(offset_z)))
     f.write(le(np.uint16(a.shape[1])))
