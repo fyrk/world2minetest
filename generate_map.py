@@ -176,14 +176,15 @@ for area in features["areas"]:
 if args.buildings:        
     print("Reading buildings file")
     buildings_file = args.buildings
+    buildings_count = from_bytes(buildings_file.read(4))
     assert from_bytes(buildings_file.read(1)) == 0
-    buildings_count = 4492
-    #buildings_count = from_bytes(buildings_file.read(4))
     for _ in trange(buildings_count):
         new_building = {}
         surface_name_len_bytes = buildings_file.read(1)
         while (surface_name_len := from_bytes(surface_name_len_bytes)) != 0:
             surface_name = buildings_file.read(surface_name_len).decode("utf-8")
+            roof_summand = 127 if surface_name == "roof" else 0
+            is_ground = surface_name == "ground"
             pos_count = from_bytes(buildings_file.read(4))
             for _ in range(pos_count):
                 x = from_bytes(buildings_file.read(4))
@@ -192,9 +193,22 @@ if args.buildings:
                 if min_x <= x <= max_x and min_y <= y <= max_y:
                     x = x-min_x
                     y = y-min_y
-                    height = z - (a[y, x, 0] + heightmap_sub)
-                    if height > 0:
-                        a[y, x, 2] = max(a[y, x, 2], 127 + height)
+                    z -= heightmap_sub
+                    if args.flat:
+                        if h_offset_x <= x < h_offset_x+heightmap.shape[1] and h_offset_y <= y < h_offset_y+heightmap.shape[0]:
+                            z -= heightmap[y-h_offset_y, x-h_offset_x]
+                        z += FLAT_HEIGHT
+                    if is_ground:
+                        if not args.flat:
+                            a[y, x, 0] = z
+                        a[y, x, 1] = SURFACES["building_ground"]
+                    else:
+                        if z > 0:
+                            if a[y, x, 2] >= 128:
+                                a[y, x, 2] = min(a[y, x, 2], 127 + z)
+                            else:
+                                a[y, x, 2] = 127 + z
+                            a[y, x, 3] = max(a[y, x, 3], roof_summand + z)
             surface_name_len_bytes = buildings_file.read(1)
 else:
     for building in features["buildings"]:
@@ -211,13 +225,15 @@ else:
             height = building.get("levels")
             if height is not None:
                 height *= 3
+        ground_z = int(round(a[yy, xx, 0].mean()))
+        a[yy, xx, 0] = ground_z
+        a[yy, xx, 2] = 127 + ground_z + 1
         if height is not None and building.get("is_part"):
             # only overwrite height if it is likely from the same building
             assert height >= 1
-            a[yy, xx, 2] = 127 + height
+            a[yy, xx, 3] = ground_z + height
         else:
-            a[yy, xx, 2] = np.maximum(a[yy, xx, 2], 127 + (height or 1))
-        a[yy, xx, 0] = int(round(a[yy, xx, 0].mean()))
+            a[yy, xx, 3] = np.maximum(a[yy, xx, 3], ground_z + (height or 1))
 
 for highway in features["highways"]:
     x_coords, y_coords = shift_coords(highway["x"], highway["y"])
@@ -275,7 +291,9 @@ for highway in features["highways"]:
             a[yy, xx, 0] = a[yy, xx, 0].mean() - height
         a[yy, xx, 1] = surface_id
         if layer >= 0:
-            a[yy, xx, 2] = 0  # remove anything above the surface (buildings, randomly added grass)
+            # remove anything above the surface (buildings, randomly added grass)
+            a[yy, xx, 2] = 0
+            a[yy, xx, 3] = 0
 
 for deco, decorations in features["decorations"].items():
     id_ = DECORATIONS[deco]

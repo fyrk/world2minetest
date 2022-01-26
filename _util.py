@@ -2,6 +2,7 @@ def le(x):
     # func copied from https://github.com/Gael-de-Sailly/geo-mapgen/blob/4bacbe902e7c0283a24ee3efa35c283ad592e81c/database.py#L34
     return x.newbyteorder("<").tobytes()
 
+
 SURFACES = {
     "default": 0,
 
@@ -34,7 +35,11 @@ SURFACES = {
     "village_green": 42,
 
     "natural": 50,  # default
-    "water": 51
+    "water": 51,
+
+    "building_ground": 60,
+
+    "grass": 70
 }
 
 DECORATIONS = {
