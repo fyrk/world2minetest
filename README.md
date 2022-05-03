@@ -1,4 +1,6 @@
-**This is still work in progress**
+**See below for [screenshots](#screenshots)**
+
+***
 
 world2minetest is a tool to generate [Minetest](https://www.minetest.net/) worlds based on publicly available real-world geodata. It was inspired by tools such as [geo-mapgen](https://github.com/Gael-de-Sailly/geo-mapgen).
 
@@ -134,7 +136,7 @@ Screenshots
 License
 =======
 world2minetest - Generate Minetest worlds based on real-world geodata<br>
-Copyright (C) 2021  Florian Rädiker
+Copyright (C) 2021-2022  Florian Rädiker
 
 This program is free software: you can redistribute it and/or modify<br>
 it under the terms of the GNU Affero General Public License as published<br>
