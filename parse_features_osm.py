@@ -1,14 +1,12 @@
 import argparse
 import json
-import random
 from collections import defaultdict
 
-import numpy as np
 from pyproj import CRS, Transformer
 
 from _util import SURFACES, DECORATIONS
 
-parser = argparse.ArgumentParser(description="Parse DGM1 'XYZ ASCII' files and generate a heightmap")
+parser = argparse.ArgumentParser(description="Parse OSM data")
 parser.add_argument("file", type=argparse.FileType("r", encoding="utf-8"), help="GeoJSON file with OSM data")
 parser.add_argument("--output", "-o", type=argparse.FileType("w"), help="Output file. Defaults to parsed_data/features_osm.json", default="./parsed_data/features_osm.json")
 

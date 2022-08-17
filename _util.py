@@ -1,6 +1,17 @@
-def le(x):
+import numpy as np
+
+
+def to_bytes(x: int, length: int) -> bytes:
+    x = [None, np.uint8, np.uint16, None, np.uint32][length](x)
     # func copied from https://github.com/Gael-de-Sailly/geo-mapgen/blob/4bacbe902e7c0283a24ee3efa35c283ad592e81c/database.py#L34
-    return x.newbyteorder("<").tobytes()
+    res = x.newbyteorder("<").tobytes()
+    assert len(res) == length
+    return res
+
+
+def from_bytes(b):
+    return int.from_bytes(b, "little")
+
 
 
 SURFACES = {

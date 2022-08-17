@@ -7,11 +7,7 @@ import numpy as np
 import skimage.draw
 from tqdm import trange
 
-from _util import le, SURFACES, DECORATIONS
-
-
-def from_bytes(b):
-    return int.from_bytes(b, "little")
+from _util import to_bytes, from_bytes, SURFACES, DECORATIONS
 
 
 HIGHWAY_WIDTHS = {
@@ -142,9 +138,8 @@ if heightmap is not None and not args.flat:
     a[h_offset_y:h_offset_y+heightmap.shape[0]+1, h_offset_x:h_offset_x+heightmap.shape[1]+1, 0] = heightmap - heightmap_sub
 else:
     heightmap_sub = 0
-    if args.flat:
-        FLAT_HEIGHT = 50
-        a[:, :, 0] = FLAT_HEIGHT  # everywhere the same height
+    FLAT_HEIGHT = 50
+    a[:, :, 0] = FLAT_HEIGHT  # everywhere the same height
 
 
 # FEATURES
@@ -173,6 +168,7 @@ for area in features["areas"]:
     xx, yy = skimage.draw.polygon(x, y)
     a[yy, xx, 1] = SURFACES[surface]
     if surface in ("water", "pitch", "playground", "sports_centre", "parking"):
+        assert 0 <= int(round(a[yy, xx, 0].mean())) <= 255
         a[yy, xx, 0] = int(round(a[yy, xx, 0].mean()))  # flatten area
     if surface in ("park", "village_green"):
         # add a bit of random grass
@@ -211,6 +207,7 @@ if args.buildings:
                         z += FLAT_HEIGHT
                     if is_ground:
                         if not args.flat:
+                            assert 0 <= z <= 255
                             a[y, x, 0] = z
                         a[y, x, 1] = SURFACES["building_ground"]
                     else:
@@ -237,6 +234,7 @@ else:
             if height is not None:
                 height *= 3
         ground_z = int(round(a[yy, xx, 0].mean()))
+        assert 0 <= ground_z <= 255
         a[yy, xx, 0] = ground_z
         a[yy, xx, 2] = 127 + ground_z + 1
         if height is not None and building.get("is_part"):
@@ -299,6 +297,7 @@ for highway in features["highways"]:
                     xx.append(x)
                     yy.append(y)
         if height != 0:
+            assert 0 <= a[yy, xx, 0].mean() - height <= 255
             a[yy, xx, 0] = a[yy, xx, 0].mean() - height
         a[yy, xx, 1] = surface_id
         if layer >= 0:
@@ -333,7 +332,12 @@ print("offset x:", offset_x, "offset z:", offset_z)
 
 if args.incr:
     with open("world2minetest/map.dat", "rb") as f:
+        version = from_bytes(f.read(1))
+        min_version = from_bytes(f.read(1))
+        if min_version > 1:
+            raise ValueError(f"Can't add incremental map info; map.dat has newer version {version}")
         old_layer_count = from_bytes(f.read(1))
+        old_floor_height = from_bytes(f.read(1))
         old_offset_x = from_bytes(f.read(2))
         old_offset_z = from_bytes(f.read(2))
         old_size_x = from_bytes(f.read(2))
@@ -358,6 +362,7 @@ if args.incr:
     block_x_end = (-offset_x+a.shape[1])//16
     block_z_start = -offset_z//16
     block_z_end = (-offset_z+a.shape[0])//16
+    print(f"checking blocks from {block_x_start},{block_z_start} to {block_x_end},{block_z_end} for changes")
     for block_x in range(block_x_start, block_x_end+1):
         for block_z in range(block_z_start, block_z_end+1):
             z1 = max(block_z*16+offset_z, 0)
@@ -367,26 +372,25 @@ if args.incr:
             if diff[z1:z2, x1:x2].any():
                 assert block_x < 2**15 and block_z < 2**15, (block_x, block_z)
                 changed_blocks.append((block_x, block_z))
-    print(f"checking blocks from {block_x_start},{block_z_start} to {block_x_end},{block_z_end} for changes")
     print("changed blocks:", changed_blocks[:10], "..." if len(changed_blocks) > 10 else "")
-    changed_blocks = zlib.compress(b"".join(le(np.int16(x)) + le(np.int16(z)) for x, z in changed_blocks), 9)
+    changed_blocks = zlib.compress(b"".join(to_bytes(x, 2) + to_bytes(z, 2) for x, z in changed_blocks), 9)
 else:
     changed_blocks = b""
 
 
 with open("world2minetest/map.dat", "wb") as f:
-    f.write(le(np.uint8(1)))  # version
-    f.write(le(np.uint8(1)))  # minimum compatible version
-    f.write(le(np.uint8(LAYER_COUNT)))
-    f.write(le(np.uint8(a[offset_z, offset_x])))  # height at spawnpoint
-    f.write(le(np.uint16(offset_x)))
-    f.write(le(np.uint16(offset_z)))
-    f.write(le(np.uint16(a.shape[1])))
-    f.write(le(np.uint16(a.shape[0])))
+    f.write(to_bytes(1, 1))  # version
+    f.write(to_bytes(1, 1))  # minimum compatible version
+    f.write(to_bytes(LAYER_COUNT, 1))
+    f.write(to_bytes(a[offset_z, offset_x, 0], 1))  # height at spawnpoint
+    f.write(to_bytes(offset_x, 2))
+    f.write(to_bytes(offset_z, 2))
+    f.write(to_bytes(a.shape[1], 2))
+    f.write(to_bytes(a.shape[0], 2))
     a_compressed = zlib.compress(a.tobytes(), 9)
-    f.write(le(np.uint32(len(a_compressed))))
+    f.write(to_bytes(len(a_compressed), 4))
     f.write(a_compressed)
-    f.write(le(np.uint32(len(changed_blocks))))
+    f.write(to_bytes(len(changed_blocks), 4))
     f.write(changed_blocks)
 
 if args.createimg:
