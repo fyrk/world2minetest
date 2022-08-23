@@ -72,7 +72,7 @@ This will create a new file `parsed_data/features_osm.json`.
 
 ## Add decoration from .dxf files
 For geodata saved in .dxf files, `parse_features_dxf.py` can be used (see `python3 parse_features_dxf.py -h` for details).
-Currently, only trees are supported.
+Currently, only trees and bushes are supported.
 
 First, download .dxf files and save them to the `data_sources/` directory.
 
@@ -80,7 +80,7 @@ For Hanover (Germany), you can use [this link](https://www.hannover.de/Leben-in-
 
 Then, run `parse_features_dxf.py` with any files you want to use.
 For each decoration, you will want to specify a query for [ezdxf](https://ezdxf.readthedocs.io/en/stable/tutorials/getting_data.html#retrieve-entities-by-query-language) to get all entities representing that decoration. Currently, decorations `tree`, `leaf_tree`, `conifer`, and `bush` are available.
-Example command (for Hanover's data, see above):
+Example command (for Hanover's data):
 ```
 $ python3 parse_features_dxf.py data_sources/path/to/file1.dxf data_sources/path/to/file2.dxf ... \
     --query "*[layer=='Eingemessene Bäume' & name=='S220.40']" "tree" \
@@ -92,7 +92,8 @@ This will create a new file `parsed_data/features_dxf.json`.
 
 
 ## Detailed buildings with CityGML/CityJSON
-CityJSON containing buildings can be used instead of data from OpenStreetMap, for a higher level of detail.<br>
+CityJSON containing buildings can be used instead of buildings data from OpenStreetMap, for a higher level of detail.
+
 If you have CityGML files, these need to be converted to CityJSON first. This can be done with [citygml-tools](https://github.com/citygml4j/citygml-tools):
 ```
 $ ./citygml-tools to-cityjson --pretty-print data_sources/path/to/directory/with/citygml/files/
@@ -108,7 +109,7 @@ This will create a new file `parsed_data/buildings_cityjson.dat`.
 
 
 ## Putting it all together – creating `map.dat`
-See `python3 generate_map.py` for details.
+See `python3 generate_map.py -h` for details.
 Example usage:
 ```
 $ python3 generate_map.py \
