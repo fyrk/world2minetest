@@ -5,7 +5,7 @@ import zlib
 import numpy as np
 from scipy.ndimage import median_filter
 
-from _util import le
+from _util import to_bytes
 
 parser = argparse.ArgumentParser(description="Parse DGM1 'XYZ ASCII' files and generate a heightmap")
 parser.add_argument("files", metavar="file", type=argparse.FileType("r", encoding="utf-8"), nargs="+", help=".xyz files to process")
@@ -45,10 +45,10 @@ if args.medfiltsize:
     print(a.min())
 
 out = args.output
-out.write(le(np.uint32(min_x)))
-out.write(le(np.uint32(min_y)))
-out.write(le(np.uint16(size[0])))
-out.write(le(np.uint16(size[1])))
+out.write(to_bytes(min_x, 4))
+out.write(to_bytes(min_y, 4))
+out.write(to_bytes(size[0], 2))
+out.write(to_bytes(size[1], 2))
 out.write(zlib.compress(a.tobytes(), 9))
 print("heightmap", a)
 if args.createimg:
